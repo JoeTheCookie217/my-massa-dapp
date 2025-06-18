@@ -1,23 +1,21 @@
-import { bytesToStr, GrpcProvider, JsonRPCClient } from "@massalabs/massa-web3";
+import { Args, GrpcProvider, JsonRPCClient } from "@massalabs/massa-web3";
 import { useEffect, useState } from "react";
 import { MassaLogo } from "@massalabs/react-ui-kit";
 import "./App.css";
 
-const sc_addr = "AS121byc9dBwjbeREk4rzUZisFyfMkdZ1Uhtcnm6n6s5hnCX6fsHc"; // TODO Update with your deployed contract address
+const sc_addr = "AS125Y3UWiMoEx3w71jf7iq1RwkxXdwkEVdoucBTAmvyzGh2KUqXS";
 
 /**
  * The key used to store the greeting in the smart contract
  */
-const GREETING_KEY = "greeting_key";
+const KEY =
+  "PAIR_INFORMATION::AS12N76WPYB3QNYKGhV2jZuQs1djdhNJLQgnm7m52pHWecvvj1fCQ:AS12upNRkQ2L1UEfZRR1b5vfrpbc9eea8pu3cCiC1nh2F1uYnsMnz:25";
 
 /**
  * App component that handles interactions with a Massa smart contract
  * @returns The rendered component
  */
 function App() {
-  const [greetingJSON, setGreetingJSON] = useState<string | null>(null);
-  const [greetingGRPC, setGreetingGRPC] = useState<string | null>(null);
-
   /**
    * Initialize the web3 client
    */
@@ -32,37 +30,38 @@ function App() {
     getGreetingGRPC();
   }, []);
 
+  const dec = (bytes: Uint8Array) => {
+    const args = new Args(bytes);
+
+    const binStep = Number(args.nextU32());
+    const LBPair = args.nextString();
+    const createdByOwner = args.nextBool();
+    const isBlacklisted = args.nextBool();
+    const res = { binStep, LBPair, createdByOwner, isBlacklisted };
+    return res;
+  };
+
   /**
    * Function to get the current greeting from the smart contract
    */
   async function getGreetingJSON() {
     if (client) {
-      console.time("getGreetingJSON");
-      const dataStoreVal = await client.getDatastoreEntry(
-        GREETING_KEY,
-        sc_addr,
-        false
-      );
-      console.timeEnd("getGreetingJSON");
-      const greetingDecoded = dataStoreVal ? bytesToStr(dataStoreVal) : null;
+      const dataStoreVal = await client.getDatastoreEntry(KEY, sc_addr, false);
+      const greetingDecoded = dataStoreVal ? dec(dataStoreVal) : null;
       console.log("Greeting from JSON:", greetingDecoded);
-      setGreetingJSON(greetingDecoded);
     }
   }
 
   async function getGreetingGRPC() {
     if (client) {
-      console.time("getGreetingGRPC");
       const dataStoreVal = await grpcClient
-        .readStorage(sc_addr, [GREETING_KEY], false)
+        .readStorage(sc_addr, [KEY], false)
         .then((res) => res[0]); // dataStoreVal is an array, we take the first element
-      console.timeEnd("getGreetingGRPC");
       if (!dataStoreVal?.length)
         throw new Error("No data found for the given key");
 
-      const greetingDecoded = dataStoreVal ? bytesToStr(dataStoreVal) : null;
+      const greetingDecoded = dataStoreVal ? dec(dataStoreVal) : null;
       console.log("Greeting from GRPC:", greetingDecoded);
-      setGreetingGRPC(greetingDecoded);
     }
   }
 
@@ -70,14 +69,7 @@ function App() {
     <>
       <div>
         <MassaLogo className="logo" size={100} />
-        <div>
-          <h2>Greeting message JSON:</h2>
-          <h1>{greetingJSON}</h1>
-        </div>
-        <div>
-          <h2>Greeting message GRPC:</h2>
-          <h1>{greetingGRPC}</h1>
-        </div>
+        <div>Open console</div>
       </div>
     </>
   );
