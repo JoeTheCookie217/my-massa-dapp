@@ -33,7 +33,7 @@ function App() {
   const dec = (bytes: Uint8Array) => {
     const args = new Args(bytes);
 
-    const binStep = Number(args.nextU32());
+    const binStep = args.nextU32();
     const LBPair = args.nextString();
     const createdByOwner = args.nextBool();
     const isBlacklisted = args.nextBool();
@@ -47,6 +47,9 @@ function App() {
   async function getGreetingJSON() {
     if (client) {
       const dataStoreVal = await client.getDatastoreEntry(KEY, sc_addr, false);
+
+      console.log("JSON response", dataStoreVal);
+
       const greetingDecoded = dataStoreVal ? dec(dataStoreVal) : null;
       console.log("Greeting from JSON:", greetingDecoded);
     }
@@ -59,6 +62,8 @@ function App() {
         .then((res) => res[0]); // dataStoreVal is an array, we take the first element
       if (!dataStoreVal?.length)
         throw new Error("No data found for the given key");
+
+      console.log("GRPC response", dataStoreVal);
 
       const greetingDecoded = dataStoreVal ? dec(dataStoreVal) : null;
       console.log("Greeting from GRPC:", greetingDecoded);
